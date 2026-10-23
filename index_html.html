@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مافيا البلدة الغامضة</title>
+<style>
+:root{--bg:#040404;--card:#101010;--orange:#ff5500;--text:#fff;--muted:#888;--border:#262626;--success:#33cc66;--danger:#ff3333;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Tahoma,sans-serif;}
+body{background:var(--bg);color:var(--text);padding:10px;display:flex;flex-direction:column;align-items:center;min-height:100vh;}
+.container{width:100%;max-width:620px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,0.9);margin-top:20px;}
+.btn{background:var(--orange);color:#fff;border:none;padding:12px;font-weight:bold;border-radius:8px;cursor:pointer;width:100%;margin-top:10px;font-size:1rem;}
+.btn:hover{background:#e04b00;}
+input{width:100%;padding:10px;background:#181818;color:#fff;border:1px solid var(--border);border-radius:8px;margin:5px 0 12px 0;font-size:0.9rem;}
+input:focus{border-color:var(--orange);outline:none;}
+#screen-intro{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 10px;}
+.intro-logo{width:90px;height:90px;background:#000;border:3px solid var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:bold;color:var(--orange);margin-bottom:15px;}
+.enter-box{width:100%;max-width:260px;background:var(--orange);color:#fff;padding:14px;border-radius:10px;font-weight:bold;font-size:1.1rem;cursor:pointer;}
+.hall-3d{position:relative;width:100%;height:310px;background:#111;border:3px solid #3d1600;border-radius:12px;margin:10px 0;perspective:900px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.table-3d{position:absolute;width:55%;height:120px;background:#260f05;border:3px solid #6b3112;border-radius:14px;transform:rotateX(25deg);}
+.seat{position:absolute;width:60px;height:68px;background:#1a1a1a;border:2px solid var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:0.65rem;padding:2px;text-align:center;}
+.seat.selectable{border-color:var(--orange);cursor:pointer;}
+.seat.dead{opacity:0.2;filter:grayscale(100%);pointer-events:none;}
+.c-name{font-size:0.6rem;font-weight:bold;background:rgba(0,0,0,0.8);padding:1px 3px;border-radius:3px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.chat-box{background:#080808;border:1px solid var(--border);border-radius:8px;height:110px;display:flex;flex-direction:column;margin-top:10px;}
+.chat-messages{flex:1;padding:6px;overflow-y:auto;font-size:0.75rem;color:#ccc;text-align:right;}
+.chat-input-area{display:flex;border-top:1px solid var(--border);background:#121212;}
+.chat-input-area input{margin:0;border:none;background:transparent;padding:8px;font-size:0.8rem;}
+.chat-input-area button{width:70px;margin:0;border-radius:0;font-size:0.8rem;padding:8px;}
+#night-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(2,2,6,0.96);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;}
+#night-modal.active{display:flex;}
+.badge{padding:3px 10px;border-radius:15px;font-size:0.75rem;font-weight:bold;}
+.bg-n{background:#161633;color:#8888ff;border:1px solid #444;}
+.bg-d{background:#332211;color:#ffaa44;border:1px solid #444;}
+.time-inputs{display:flex;gap:6px;align-items:center;}
+.time-inputs div{flex:1;}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div id="screen-intro">
+        <div class="intro-logo">MT</div>
+        <div style="font-size:0.95rem;color:var(--muted);margin-bottom:25px;">مافيا البلدة الغامضة</div>
+        <div class="enter-box" onclick="goToHome()">دخول</div>
+    </div>
+
+    <div id="screen-home" style="display:none;">
+        <h3 style="color:var(--orange);margin-bottom:6px;font-size:1.05rem;">انشاء غرفة اللعب الجماعية</h3>
+        <p style="color:var(--muted);font-size:0.8rem;margin-bottom:10px;">حددي الاوقات، انشئي الكود، وانتظري اجتماع البنات.</p>
+        
+        <label>اسمك الكريم:</label>
+        <input type="text" id="p-name" value="اللاعبة" placeholder="اسمك هنا...">
+        
+        <label>كود الغرفة (مثال: MT777):</label>
+        <input type="text" id="room-code" placeholder="أدخلي الكود هنا...">
+        
+        <div style="background:#161616;padding:10px;border-radius:8px;border:1px solid var(--border);margin:10px 0;">
+            <p style="font-size:0.8rem;color:var(--orange);margin-bottom:8px;font-weight:bold;">ضبط أوقات المراحل (دقائق وثواني):</p>
+            
+            <label style="font-size:0.75rem;">وقت القاتل:</label>
+            <div class="time-inputs">
+                <div><input type="number" id="m-killer" value="0" min="0" max="5"></div>
+                <div><input type="number" id="s-killer" value="15" min="0" max="59"></div>
+            </div>
+
+            <label style="font-size:0.75rem;margin-top:4px;">وقت الطبيب:</label>
+            <div class="time-inputs">
+                <div><input type="number" id="m-doctor" value="0" min="0" max="5"></div>
+                <div><input type="number" id="s-doctor" value="15" min="0" max="59"></div>
+            </div>
+
+            <label style="font-size:0.75rem;margin-top:4px;">وقت المحقق:</label>
+            <div class="time-inputs">
+                <div><input type="number" id="m-detective" value="0" min="0" max="5"></div>
+                <div><input type="number" id="s-detective" value="15" min="0" max="59"></div>
+            </div>
+
+            <label style="font-size:0.75rem;margin-top:4px;">وقت النقاش والتصويت (النهار):</label>
+            <div class="time-inputs">
+                <div><input type="number" id="m-day" value="0" min="0" max="10"></div>
+                <div><input type="number" id="s-day" value="30" min="5" max="59"></div>
+            </div>
+        </div>
+        
+        <button class="btn" onclick="enterLobby()">دخول قاعة الانتظار</button>
+    </div>
+
+    <div id="screen-lobby" style="display:none;text-align:center;">
+        <h3 style="color:var(--orange);margin-bottom:8px;">قاعة انتظار البلدة الغامضة</h3>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:15px;">أعطي كود الغرفة لصديقاتك ليدخلن معك:<br><strong id="lbl-room-code" style="color:var(--orange);font-size:1.2rem;"></strong></p>
+        
+        <div style="background:#141414;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:15px;text-align:right;">
+            <h4 style="font-size:0.85rem;color:var(--orange);margin-bottom:8px;">البنات المنتظرات في الغرفة:</h4>
+            <ul id="lobby-players-list" style="list-style:none;font-size:0.9rem;color:#ccc;"></ul>
+        </div>
+
+        <button class="btn" onclick="startHostGame()">بدء الجولة الآن</button>
+    </div>
+
+    <div id="screen-game" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span id="phase-badge" class="badge bg-n">الليل</span>
+            <span id="timer-box" style="font-size:0.9rem;font-weight:bold;color:var(--orange);">00:00</span>
+            <span style="font-size:0.75rem;color:var(--muted);" id="round-box">الجولة: 1</span>
+        </div>
+
+        <div class="hall-3d" id="hall">
+            <div class="table-3d"></div>
+        </div>
+
+        <div class="chat-box">
+            <div class="chat-messages" id="chat-messages">
+                <div style="color:#666;">مرحباً بك في شات مافيا البلدة الغامضة.</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="اكتبي رسالتك للنقاش..." onkeydown="if(event.key==='Enter')sendChatMessage()">
+                <button class="btn" onclick="sendChatMessage()">إرسال</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="night-modal">
+    <h2 id="m-title" style="color:var(--orange);margin-bottom:8px;font-size:1.1rem;">النوم العميق</h2>
+    <p id="m-desc" style="color:var(--muted);margin-bottom:12px;font-size:0.8rem;"></p>
+    <div id="m-actions" style="width:100%;max-width:260px;"></div>
+</div>
+
+<script>
+let myName="", roomCode="", players=[], myRole="", selectedTarget=null, killed=null, healed=null;
+let timeKill=15, timeDoc=15, timeDet=15, timeDay=30;
+let currentTimer=null, remainingTime=0, lobbyInterval=null;
+
+function goToHome(){
+    document.getElementById('screen-intro').style.display='none';
+    document.getElementById('screen-home').style.display='block';
+}
+
+function enterLobby(){
+    myName=document.getElementById('p-name').value.trim()||"اللاعبة";
+    roomCode=document.getElementById('room-code').value.trim().toUpperCase();
+    if(!roomCode){alert("أدخلي كود الغرفة أولاً!");return;}
+
+    timeKill = (parseInt(document.getElementById('m-killer').value)||0)*60 + (parseInt(document.getElementById('s-killer').value)||15);
+    timeDoc = (parseInt(document.getElementById('m-doctor').value)||0)*60 + (parseInt(document.getElementById('s-doctor').value)||15);
+    timeDet = (parseInt(document.getElementById('m-detective').value)||0)*60 + (parseInt(document.getElementById('s-detective').value)||15);
+    timeDay = (parseInt(document.getElementById('m-day').value)||0)*60 + (parseInt(document.getElementById('s-day').value)||30);
+
+    document.getElementById('screen-home').style.display='none';
+    document.getElementById('screen-lobby').style.display='block';
+    document.getElementById('lbl-room-code').innerText=roomCode;
+
+    updateLobbyData();
+    lobbyInterval = setInterval(updateLobbyData, 1500);
+}
+
+function updateLobbyData(){
+    let roomData=JSON.parse(localStorage.getItem('mt_room_'+roomCode))||{players:[], started:false};
+    
+    if(!roomData.players.find(p=>p.name===myName)){
+        roomData.players.push({id:roomData.players.length, name:myName, role:'', isAlive:true});
+        localStorage.setItem('mt_room_'+roomCode, JSON.stringify(roomData));
+    }
+
+    players=roomData.players;
+    let list=document.getElementById('lobby-players-list');
+    list.innerHTML=players.map(p=>`<li>${p.name} ${p.name===myName?'(أنتِ)':''}</li>`).join('');
+
+    if(roomData.started){
+        clearInterval(lobbyInterval);
+        initGamePlay();
+    }
+}
+
+function startHostGame(){
+    let roomData=JSON.parse(localStorage.getItem('mt_room_'+roomCode))||{players:[]};
+    let roles=['killer','doctor','detective','citizen','citizen'];
+    roomData.players.forEach((p, index)=>{
+        p.role = roles[index % roles.length];
+        p.isAlive = true;
+    });
+    roomData.started = true;
+    localStorage.setItem('mt_room_'+roomCode, JSON.stringify(roomData));
+}
+
+function initGamePlay(){
+    let roomData=JSON.parse(localStorage.getItem('mt_room_'+roomCode));
+    players=roomData.players;
+    let me=players.find(p=>p.name===myName);
+    myRole=me ? me.role : 'citizen';
+
+    document.getElementById('screen-lobby').style.display='none';
+    document.getElementById('screen-game').style.display='block';
+    addChatMessage("النظام", `بدأت الجولة في مافيا البلدة الغامضة. دورك: ${getRoleName(myRole)}`);
+    render3DHall();
+    startNightCycle();
+}
+
+function getRoleName(r){
+    return r=='killer'?'القاتل':r=='doctor'?'الطبيب':r=='detective'?'المحقق':'مواطن';
+}
+
+function render3DHall(){
+    let hall=document.getElementById('hall');
+    hall.querySelectorAll('.seat').forEach(s=>s.remove());
+    
+    let coords=[
+        {top:'20px', left:'15px'},
+        {top:'200px', left:'15px'},
+        {top:'20px', right:'15px'},
+        {top:'200px', right:'15px'},
+        {top:'5px', left:'120px'}
+    ];
+
+    players.forEach((p,i)=>{
+        let pos=coords[i%coords.length];
+        let s=document.createElement('div');
+        s.className=`seat ${!p.isAlive?'dead':''} ${selectedTarget===p.id?'selectable':''}`;
+        if(pos.top) s.style.top=pos.top;
+        if(pos.left) s.style.left=pos.left;
+        if(pos.right) s.style.right=pos.right;
+
+        let dispName=p.name+(p.name===myName?" (أنتِ)":"");
+        s.innerHTML=`
+            <div class="c-name">${dispName}</div>
+            <div style="font-size:1rem;margin:1px 0;">${p.isAlive?'شخص':'متوفى'}</div>
+            <div style="font-size:0.5rem;color:${p.isAlive?'var(--success)':'var(--danger)'};">${p.isAlive?'حي':'ميت'}</div>
+        `;
+        hall.appendChild(s);
+    });
+}
+
+function sendChatMessage(){
+    let input=document.getElementById('chat-input');
+    let text=input.value.trim();
+    if(!text) return;
+    addChatMessage(myName, text);
+    input.value="";
+}
+
+function addChatMessage(sender, text){
+    let box=document.getElementById('chat-messages');
+    box.innerHTML+=`<div><strong>${sender}:</strong> ${text}</div>`;
+    box.scrollTop=box.scrollHeight;
+}
+
+function startNightCycle(){
+    killed=null; healed=null;
+    showModal("النوم العميق", "البلدة تغمض عيونها في سكون الليل.", 2);
+    setTimeout(killerTurn, 2000);
+}
+
+function killerTurn(){
+    showModalWithTimer("دور القاتل", "القاتل يفتح عينيه لاختيار ضحيته:", timeKill, ()=>{
+        if(myRole=='killer' && players.find(p=>p.name===myName).isAlive){
+            promptTargetSelection(id=>{ killed=id; setTimeout(doctorTurn, 500); });
+        } else {
+            let alive=players.filter(p=>p.isAlive && p.name!==myName);
+            if(alive.length>0) killed=alive[Math.floor(Math.random()*alive.length)].id;
+            setTimeout(doctorTurn, 500);
+        }
+    });
+}
+
+function doctorTurn(){
+    showModalWithTimer("دور الطبيب", "القاتل يغلق عينيه، حان دور الطبيب للاستيقاظ والحماية:", timeDoc, ()=>{
+        if(myRole=='doctor' && players.find(p=>p.name===myName).isAlive){
+            promptTargetSelection(id=>{ healed=id; setTimeout(detectiveTurn, 500); });
+        } else {
+            let alive=players.filter(p=>p.isAlive);
+            if(alive.length>0) healed=alive[Math.floor(Math.random()*alive.length)].id;
+            setTimeout(detectiveTurn, 500);
+        }
+    });
+}
+
+function detectiveTurn(){
+    showModalWithTimer("دور المحقق", "الطبيب يغلق عينيه، حان دور المحقق لكشف الحقائق:", timeDet, ()=>{
+        if(myRole=='detective' && players.find(p=>p.name===myName).isAlive){
+            promptTargetSelection(id=>{
+                let t=players.find(p=>p.id===id);
+                let isMafia=t.role=='killer';
+                addChatMessage("النظام", `تحقيقك: ${t.name} هو ${isMafia?'عضو في المافيا!':'مواطن بريء.'}`);
+                setTimeout(wakeUpMorning, 500);
+            });
+        } else {
+            setTimeout(wakeUpMorning, 500);
+        }
+    });
+}
+
+function promptTargetSelection(cb){
+    let box=document.getElementById('m-actions');
+    box.innerHTML='';
+    document.getElementById('m-desc').innerText="اضغط لاختيار الشخص المستهدف:";
+
+    players.filter(p=>p.isAlive && p.name!==myName).forEach(p=>{
+        let b=document.createElement('button');
+        b.className="btn";
+        b.style.margin="4px 0";
+        b.style.fontSize="0.8rem";
+        b.innerText=`استهداف: ${p.name}`;
+        b.onclick=()=>{
+            clearInterval(currentTimer);
+            document.getElementById('night-modal').classList.remove('active');
+            cb(p.id);
+        };
+        box.appendChild(b);
+    });
+}
+
+function wakeUpMorning(){
+    showModal("اصحوا يا مواطنين", "انقشعت ظلمات الليل وأشرقت الشمس.", 3);
+    setTimeout(()=>{
+        let summary="تقرير الصباح:";
+        if(killed!==null){
+            if(killed===healed){
+                summary+=" حاول القاتل القتل، لكن الطبيب أنقذه في اللحظة الأخيرة!";
+            } else {
+                let v=players.find(p=>p.id===killed);
+                if(v && v.isAlive){
+                    v.isAlive=false;
+                    summary+=` وُجدت جثة ${v.name} (${getRoleName(v.role)}) مقتولة هذا الصباح.`;
+                }
+            }
+        } else {
+            summary+=" مرت الليلة بسلام تام ولم تقع أي جرائم.";
+        }
+        addChatMessage("النظام", summary);
+        render3DHall();
+        startDayPhase();
+    }, 3000);
+}
+
+function startDayPhase(){
+    document.getElementById('phase-badge').className="badge bg-d";
+    document.getElementById('phase-badge').innerText="النهار والنقاش";
+    
+    remainingTime=timeDay;
+    updateTimerDisplay();
+    currentTimer=setInterval(()=>{
+        remainingTime--;
+        updateTimerDisplay();
+        if(remainingTime<=0){
+            clearInterval(currentTimer);
+            startNightCycle();
+        }
+    }, 1000);
+}
+
+function updateTimerDisplay(){
+    let m=Math.floor(remainingTime/60);
+    let s=remainingTime%60;
+    document.getElementById('timer-box').innerText=`${m < 10 ? '0':''}${m}:${s<10?'0':''}${s}`;
+}
+
+function showModal(title, desc, durationSec){
+    document.getElementById('m-title').innerText=title;
+    document.getElementById('m-desc').innerText=desc;
+    document.getElementById('m-actions').innerHTML='';
+    let modal=document.getElementById('night-modal');
+    modal.classList.add('active');
+
+    remainingTime = durationSec;
+    updateTimerDisplay();
+    
+    clearInterval(currentTimer);
+    currentTimer=setInterval(()=>{
+        remainingTime--;
+        updateTimerDisplay();
+    }, 1000);
+
+    setTimeout(()=>{
+        clearInterval(currentTimer);
+        modal.classList.remove('active');
+    }, durationSec * 1000);
+}
+
+function showModalWithTimer(title, desc, durationSec, cb){
+    document.getElementById('m-title').innerText=title;
+    document.getElementById('m-desc').innerText=desc;
+    document.getElementById('m-actions').innerHTML='';
+    let modal=document.getElementById('night-modal');
+    modal.classList.add('active');
+
+    remainingTime = durationSec;
+    updateTimerDisplay();
+    
+    clearInterval(currentTimer);
+    currentTimer=setInterval(()=>{
+        remainingTime--;
+        updateTimerDisplay();
+        if(remainingTime <= 0){
+            clearInterval(currentTimer);
+            modal.classList.remove('active');
+            cb();
+        }
+    }, 1000);
+}
+</script>
+</body>
+</html>
